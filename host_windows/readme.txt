@@ -1,3 +1,7 @@
+https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2Fcortex_mx_stm32%2FVirtual%20COM%20port%20in%20Win7%20or%20Vista%2032-bit&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=18304
+
+http://dekar.wc3edit.net/st%20website/VCP_Setup.zip
+
 /******************** (C) COPYRIGHT 2010 STMicroelectronics ********************
 * File Name          : readme.txt
 * Author             : MCD Application Team
