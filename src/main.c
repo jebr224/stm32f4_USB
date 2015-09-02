@@ -15,7 +15,7 @@
 
 #define CR 13 //carriage return
 
-#define SOFTWARE_VERSION "0.0.1"
+#define SOFTWARE_VERSION "0.0.2"
 #define HARDWARE_VERSION "0.0.1"
 
 // Private variables
@@ -26,9 +26,13 @@ __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 void Delay(volatile uint32_t nCount);
 void init();
 int readString(char * myBuff);
+unsigned char parseHex(char * line, unsigned char len, unsigned long * value);
 void configCan1(int scaler);
 void configCan2(void);
 
+//GLOBALS
+CAN_InitTypeDef       CAN_InitStructure_1;
+//CAN_InitTypeDef       CAN_InitStructure_2;
 
 
 /*
@@ -63,9 +67,8 @@ int main(void) {
 	setbuf(stdout, NULL);
 		
 	while(1){
-		//calculation_test();
 		readString(usbStr);
-		printf("top \n");
+		//printf("top \n");
 
 		switch(usbStr[0]){
 			case 'V':{
@@ -81,10 +84,48 @@ int main(void) {
 			}
 			case 't':{
 				
-				//char stdID[3];
+				unsigned long stdID;
 				uint8_t TransmitMailbox = 0;
-				CanTxMsg TxMessage;
-				
+				printf("case t \n");
+				//strPrt = usbStr +1;
+				if(  parseHex( usbStr +1 , 3, &stdID)) {
+					
+					CanTxMsg TxMessage;
+					unsigned long len;
+					uint8_t error =0;
+					
+					if( !parseHex(usbStr+4,1,&len)){
+						len = 0;
+						error = 1;
+					}
+					
+					TxMessage.StdId = stdID;		
+					TxMessage.DLC = len;
+
+					TxMessage.RTR = CAN_RTR_DATA;
+					TxMessage.IDE = CAN_ID_STD;
+					//load data in the struct
+					for (int i=0;i++;i<len){
+						unsigned long data;
+					//	error |= parseHex(usbStr+5+i*2,2,&data);
+						TxMessage.Data[i] = data;
+					
+					}
+					if(1){
+						
+						//send CAN1
+						TransmitMailbox = CAN_Transmit(CAN1, &TxMessage);
+						int i = 0;
+						while((CAN_TransmitStatus(CAN1, TransmitMailbox) != CANTXOK) && (i != 0xFFFFFF)) // Wait on Transmit
+						{
+							i++;
+						}
+						printf("message sent \n");
+					}else{
+						printf("NO message sent\n");
+					}
+					
+				}
 			//	TxMessage.StdId = 
 			//not done yet!	
 				break;
@@ -106,45 +147,21 @@ int main(void) {
 				}
 				break;
 			}
-	
-	
-		//	printf("/r today /r");
-			uint8_t TransmitMailbox = 0;
-			CanTxMsg TxMessage;
-
-			//configCan1();
+			case 'O':{
 			
-			TxMessage.StdId = 0x123;
-			TxMessage.ExtId = 0x00;
-			TxMessage.RTR = CAN_RTR_DATA;
-			TxMessage.IDE = CAN_ID_STD;
-			TxMessage.DLC = 4;
-	 
-			TxMessage.Data[0] = 0x02;
-			TxMessage.Data[1] = 0x11;
-			TxMessage.Data[2] = 0x11;
-			TxMessage.Data[3] = 0x11;
-					
-			  //send CAN1
-			TransmitMailbox = CAN_Transmit(CAN1, &TxMessage);
-			int i = 0;
-			while((CAN_TransmitStatus(CAN1, TransmitMailbox) != CANTXOK) && (i != 0xFFFFFF)) // Wait on Transmit
-			{
-				i++;
+				CAN_Init(CAN1, &CAN_InitStructure_1);
+				break;
 			}
-		
+			case 'C':{
+				CAN_DeInit(CAN1);
+				break;
+			}
+	
+	
 		}
+		usbStr[0]= '0';
 	}
 	
-	//printf(usbStr);
-	/*
-	for(;;) {
-		GPIO_SetBits(GPIOD, GPIO_Pin_12);
-		Delay(500);
-		GPIO_ResetBits(GPIOD, GPIO_Pin_12);
-		Delay(500);
-	}
-*/
 	return 0;
 }
 
@@ -155,8 +172,8 @@ int readString(char * myBuff){
 	{
 		myBuff[len] = getchar();
 		len++;
-	}while( myBuff[len] != CR );
-	myBuff[len+1] = 0;
+	}while( myBuff[len-1] != CR );
+	myBuff[len] = 0;
 	len++;
 	return len;
 }
@@ -211,7 +228,6 @@ unsigned char parseHex(char * line, unsigned char len, unsigned long * value) {
 void configCan1(int scaler){
 
   GPIO_InitTypeDef      GPIO_InitStructure;
-  CAN_InitTypeDef       CAN_InitStructure;
   CAN_FilterInitTypeDef CAN_FilterInitStructure;
 	
 	
@@ -237,16 +253,16 @@ void configCan1(int scaler){
  
   /* CAN register init */
   CAN_DeInit(CAN1);
-  CAN_StructInit(&CAN_InitStructure);
+  CAN_StructInit(&CAN_InitStructure_1);
  
   /* CAN cell init */
-  CAN_InitStructure.CAN_TTCM = DISABLE;
-  CAN_InitStructure.CAN_ABOM = DISABLE;
-  CAN_InitStructure.CAN_AWUM = DISABLE;
-  CAN_InitStructure.CAN_NART = DISABLE;
-  CAN_InitStructure.CAN_RFLM = DISABLE;
-  CAN_InitStructure.CAN_TXFP = DISABLE;
-  CAN_InitStructure.CAN_Mode = CAN_Mode_Normal;
+  CAN_InitStructure_1.CAN_TTCM = DISABLE;
+  CAN_InitStructure_1.CAN_ABOM = DISABLE;
+  CAN_InitStructure_1.CAN_AWUM = DISABLE;
+  CAN_InitStructure_1.CAN_NART = DISABLE;
+  CAN_InitStructure_1.CAN_RFLM = DISABLE;
+  CAN_InitStructure_1.CAN_TXFP = DISABLE;
+  CAN_InitStructure_1.CAN_Mode = CAN_Mode_Normal;
  
  
   /* quanta 1+6+7 = 14, 14 * 3 = 42, 42000000 / 42 = 1000000 */
@@ -254,13 +270,12 @@ void configCan1(int scaler){
  
   /* Requires a clock with integer division into APB clock */
  
-  CAN_InitStructure.CAN_SJW = CAN_SJW_1tq; // ? posible combos, I bet? // 1+6+7 = 14, 1+14+6 = 21, 1+15+5 = 21
-  CAN_InitStructure.CAN_BS1 = CAN_BS1_6tq;  //nvm //4 + 3+ 1 = 8
-  CAN_InitStructure.CAN_BS2 = CAN_BS2_7tq;
-  //below is cleaver.  8MHz/14M = 0.571428571 = 0
-  //CAN_InitStructure.CAN_Prescaler = 5;//?;1;//RCC_Clocks.PCLK1_Frequency / (14 * 1000000); // quanta by baudrate
-  CAN_InitStructure.CAN_Prescaler = scaler; //3;//RCC_Clocks.PCLK1_Frequency / (14 * 1000000);
-  CAN_Init(CAN1, &CAN_InitStructure);
+  CAN_InitStructure_1.CAN_SJW = CAN_SJW_1tq; 
+  CAN_InitStructure_1.CAN_BS1 = CAN_BS1_6tq; 
+  CAN_InitStructure_1.CAN_BS2 = CAN_BS2_7tq;
+ 
+  CAN_InitStructure_1.CAN_Prescaler = scaler; 
+  
  
   /* CAN filter init */
   CAN_FilterInitStructure.CAN_FilterNumber = 0; // CAN1 [ 0..13]
