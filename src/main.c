@@ -94,7 +94,7 @@ int main(void) {
 					unsigned long len;
 					uint8_t error =0;
 					
-					if( !parseHex(usbStr+4,1,&len)){
+					if( !parseHex(usbStr+4,1,&len)){ //returns 1 if everything is good
 						len = 0;
 						error = 1;
 					}
@@ -105,11 +105,15 @@ int main(void) {
 					TxMessage.RTR = CAN_RTR_DATA;
 					TxMessage.IDE = CAN_ID_STD;
 					//load data in the struct
-					for (int i=0;i++;i<len){
-						unsigned long data;
-					//	error |= parseHex(usbStr+5+i*2,2,&data);
-						TxMessage.Data[i] = data;
 					
+					printf("%i\n",len);
+					
+					for (unsigned int i=0;i<len;i++){
+						unsigned long data;
+						
+						error |= parseHex(usbStr+5+i*2,2,&data);
+						TxMessage.Data[i] = (unsigned char)data;
+						printf("[ %i ]  -> %i\n",i,data);
 					}
 					if(1){
 						
@@ -125,9 +129,7 @@ int main(void) {
 						printf("NO message sent\n");
 					}
 					
-				}
-			//	TxMessage.StdId = 
-			//not done yet!	
+				}	
 				break;
 			}
 		
@@ -148,17 +150,49 @@ int main(void) {
 				break;
 			}
 			case 'O':{
-			
+				CAN_CancelTransmit(CAN1,2);
+				CAN_CancelTransmit(CAN1,1);
+				CAN_CancelTransmit(CAN1,0);
 				CAN_Init(CAN1, &CAN_InitStructure_1);
 				break;
 			}
 			case 'C':{
+				
 				CAN_DeInit(CAN1);
 				break;
 			}
+		
 	
-	
+		}//end of switch statment
+		
+		{
+			FlagStatus ourStatus;
+			uint32_t CAN_FLAG;
+			uint8_t mailBox = 10;
+			CanRxMsg RxMessage;
+			CAN_TypeDef* CANx;
+
+			CANx = CAN1;			
+			printf("%i",ourStatus);
+			if (CAN_GetFlagStatus(CANx,CAN_FLAG_RQCP0)){  //is mail in mailbox 0 
+				mailBox = 0;
+			}else if (CAN_GetFlagStatus(CANx,CAN_FLAG_RQCP1)){  //is mail in mailbox 1 
+				mailBox = 1;
+			}else if (CAN_GetFlagStatus(CANx,CAN_FLAG_RQCP2)){  //is mail in mailbox 2 
+				mailBox = 2;
+			}
+			
+			if(mailBox !=10){
+				 CAN_Receive( CANx, mailBox , &RxMessage);
+			
+				printf("r%x%i",RxMessage.StdId,RxMessage.DLC);
+				for(int i;i<RxMessage.DLC;i++){
+					printf("%x",RxMessage.Data[i]);
+				}
+				printf("\n");
+			}
 		}
+	
 		usbStr[0]= '0';
 	}
 	
